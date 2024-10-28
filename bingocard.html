@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビンゴカード</title>
+<style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    table { margin: 0 auto; border-collapse: collapse; }
+    td {
+        width: 50px; height: 50px;
+        border: 1px solid #333;
+        text-align: center;
+        cursor: pointer;
+        font-size: 1.5em;
+    }
+    .selected { background-color: #f4a261; color: white; }
+</style>
+</head>
+<body>
+
+<h1>ビンゴカード</h1>
+<p>数字をクリックしてリーチやビンゴを目指してください。</p>
+<table id="bingoCard"></table>
+<p id="result"></p>
+
+<script>
+    const cardSize = 5;
+    const card = [];
+    const selectedNumbers = Array.from(Array(cardSize), () => Array(cardSize).fill(false));
+
+    function generateBingoCard() {
+        const numberRange = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75]];
+        for (let col = 0; col < cardSize; col++) {
+            const colNumbers = new Set();
+            while (colNumbers.size < cardSize) {
+                const num = Math.floor(Math.random() * (numberRange[col][1] - numberRange[col][0] + 1)) + numberRange[col][0];
+                colNumbers.add(num);
+            }
+            card.push([...colNumbers]);
+        }
+        card[2][2] = 'FREE'; // 中央のマスはFREE
+        renderCard();
+    }
+
+    function renderCard() {
+        const table = document.getElementById('bingoCard');
+        table.innerHTML = '';
+        for (let row = 0; row < cardSize; row++) {
+            const tr = document.createElement('tr');
+            for (let col = 0; col < cardSize; col++) {
+                const td = document.createElement('td');
+                td.textContent = card[col][row];
+                if (card[col][row] === 'FREE') {
+                    td.classList.add('selected');
+                    selectedNumbers[row][col] = true;
+                }
+                td.onclick = () => selectNumber(row, col, td);
+                tr.appendChild(td);
+            }
+            table.appendChild(tr);
+        }
+    }
+
+    function selectNumber(row, col, cell) {
+        if (card[col][row] !== 'FREE' && !selectedNumbers[row][col]) {
+            selectedNumbers[row][col] = true;
+            cell.classList.add('selected');
+            checkBingo();
+        }
+    }
+
+    function checkBingo() {
+        let bingo = false, reach = false;
+        
+        // Rows and columns check
+        for (let i = 0; i < cardSize; i++) {
+            if (selectedNumbers[i].every(val => val)) bingo = true;
+            if (selectedNumbers[i].filter(val => val).length === cardSize - 1) reach = true;
+
+            const colSelected = selectedNumbers.map(row => row[i]);
+            if (colSelected.every(val => val)) bingo = true;
+            if (colSelected.filter(val => val).length === cardSize - 1) reach = true;
+        }
+
+        // Diagonals check
+        const diagonal1 = selectedNumbers.map((row, i) => row[i]);
+        const diagonal2 = selectedNumbers.map((row, i) => row[cardSize - i - 1]);
+        if (diagonal1.every(val => val) || diagonal2.every(val => val)) bingo = true;
+        if (diagonal1.filter(val => val).length === cardSize - 1 || diagonal2.filter(val => val).length === cardSize - 1) reach = true;
+
+        document.getElementById('result').textContent = bingo ? "ビンゴ！" : reach ? "リーチ！" : "";
+    }
+
+    generateBingoCard();
+</script>
+
+</body>
+</html>
